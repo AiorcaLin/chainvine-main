@@ -1,0 +1,309 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========== 主题色系（RGB格式，支持 Tailwind 透明度修饰符） ========== */
+
+:root {
+  /* 🌿 Light Theme — 绿色藤蔓风格 */
+  --background: 255 255 255;        /* #FFFFFF */
+  --foreground: 17 24 39;           /* #111827 (gray-900) */
+  --card: 255 255 255;              /* #FFFFFF */
+  --card-hover: 249 250 251;        /* #F9FAFB (gray-50) */
+  --secondary: 243 244 246;         /* #F3F4F6 (gray-100) */
+  --secondary-hover: 229 231 235;   /* #E5E7EB (gray-200) */
+  --border: 209 213 219;            /* #D1D5DB (gray-300) */
+  --muted: 107 114 128;             /* #6B7280 (gray-500) */
+  --accent: 5 150 105;              /* #059669 (emerald-600) */
+  --accent-hover: 4 120 87;         /* #047857 (emerald-700) */
+}
+
+.dark {
+  /* 🌙 Dark Theme — 暗色背景 + 绿色点缀 */
+  --background: 26 26 26;           /* #1A1A1A */
+  --foreground: 229 229 229;        /* #E5E5E5 */
+  --card: 30 30 30;                 /* #1E1E1E */
+  --card-hover: 42 42 42;           /* #2A2A2A */
+  --secondary: 37 37 38;            /* #252526 */
+  --secondary-hover: 51 51 51;      /* #333333 */
+  --border: 51 51 51;               /* #333333 */
+  --muted: 153 153 153;             /* #999999 */
+  --accent: 16 185 129;             /* #10B981 (emerald-500) */
+  --accent-hover: 5 150 105;        /* #059669 (emerald-600) */
+}
+
+body {
+  color: rgb(var(--foreground));
+  background: rgb(var(--background));
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(var(--secondary));
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--muted) / 0.5);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--muted) / 0.7);
+}
+
+@keyframes bounce-slow {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 3s infinite ease-in-out;
+}
+
+/* Prism.js theme customization */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #6272a4;
+}
+
+.token.punctuation {
+  color: #f8f8f2;
+}
+
+.token.property,
+.token.tag,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #ff79c6;
+}
+
+.token.boolean,
+.token.number {
+  color: #bd93f9;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+  color: #50fa7b;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string,
+.token.variable {
+  color: #f8f8f2;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.function,
+.token.class-name {
+  color: #f1fa8c;
+}
+
+.token.keyword {
+  color: #ff79c6;
+}
+
+.token.regex,
+.token.important {
+  color: #ffb86c;
+}
+
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+
+.token.italic {
+  font-style: italic;
+}
+
+.token.entity {
+  cursor: help;
+}
+
+/* Code block styling */
+pre[class*="language-"] {
+  background: rgb(var(--card-hover)) !important;
+  border-radius: 0.5rem;
+  margin: 0 !important;
+  overflow: auto;
+  padding: 1rem !important;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+code[class*="language-"] {
+  text-shadow: none !important;
+  padding: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Line Numbers */
+pre[class*="language-"].line-numbers {
+  position: relative;
+  padding-left: 3.8em !important;
+  counter-reset: linenumber;
+}
+
+pre[class*="language-"].line-numbers>code {
+  position: relative;
+  white-space: inherit;
+}
+
+.line-numbers .line-numbers-rows {
+  position: absolute;
+  pointer-events: none;
+  top: 0;
+  font-size: 100%;
+  left: -3.8em;
+  width: 3em;
+  /* works for line-numbers below 1000 lines */
+  letter-spacing: -1px;
+  border-right: 1px solid rgb(var(--border));
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+.line-numbers-rows>span {
+  display: block;
+  counter-increment: linenumber;
+  pointer-events: none;
+}
+
+.line-numbers-rows>span:before {
+  content: counter(linenumber);
+  color: rgb(var(--muted));
+  display: block;
+  padding-right: 0.8em;
+  text-align: right;
+}
+
+/* Code container styles */
+pre[class*="language-"] {
+  margin: 0 !important;
+  padding: 1rem !important;
+  background: rgb(var(--card-hover)) !important;
+  overflow: auto;
+}
+
+code[class*="language-"] {
+  text-shadow: none !important;
+  padding: 0;
+}
+
+/* Line numbers container */
+pre[class*="language-"].line-numbers.whitespace-pre-wrap {
+  white-space: pre-wrap !important;
+  word-break: break-all !important;
+}
+
+pre[class*="language-"].line-numbers.whitespace-pre-wrap code {
+  word-break: break-all !important;
+}
+
+/* Adjust line numbers position for wrapped lines */
+.line-numbers-rows {
+  white-space: nowrap !important;
+}
+
+.line-numbers-rows>span {
+  pointer-events: none;
+  display: block;
+}
+
+/* Custom scrollbar for FileExplorer */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--muted) / 0.4) rgb(var(--secondary));
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: rgb(var(--secondary));
+  transition: background-color 0.2s;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track:hover {
+  background: rgb(var(--card-hover));
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgb(var(--muted) / 0.4);
+  border-radius: 4px;
+  border: 2px solid rgb(var(--secondary));
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--muted) / 0.6);
+}
+
+/* Ensure scrollbar is visible on hover */
+.hover\:overflow-y-scroll:hover {
+  overflow-y: scroll !important;
+}
+
+/* Hide scrollbar but keep functionality */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari and Opera */
+}
+
+/* File Explorer scrollbar */
+.scrollbar-file-explorer::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollbar-file-explorer::-webkit-scrollbar-track {
+  background: rgb(var(--secondary));
+}
+
+.scrollbar-file-explorer::-webkit-scrollbar-thumb {
+  background: rgb(var(--muted) / 0.4);
+  border-radius: 4px;
+}
+
+.scrollbar-file-explorer {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--muted) / 0.4) rgb(var(--secondary));
+}

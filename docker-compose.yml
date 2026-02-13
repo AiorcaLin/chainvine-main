@@ -1,0 +1,32 @@
+# 区块链智能合约漏洞扫描系统 - Docker Compose 配置
+# 一键启动全部服务: docker-compose up
+
+version: "3.8"
+
+services:
+  # Slither 静态分析服务
+  slither-service:
+    build:
+      context: ./slither-service
+      dockerfile: Dockerfile
+    container_name: mush-slither
+    ports:
+      - "8545:8545"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - slither-tmp:/tmp/contracts
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8545/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "2.0"
+
+volumes:
+  slither-tmp:

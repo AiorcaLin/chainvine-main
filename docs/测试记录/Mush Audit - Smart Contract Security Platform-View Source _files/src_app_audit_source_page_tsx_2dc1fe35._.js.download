@@ -1,0 +1,23 @@
+(globalThis.TURBOPACK_CHUNK_LISTS || (globalThis.TURBOPACK_CHUNK_LISTS = [])).push({
+    script: typeof document === "object" ? document.currentScript : undefined,
+    chunks: [
+  "static/chunks/src_c2c2d503._.js",
+  "static/chunks/node_modules_next_a10a9ad1._.js",
+  "static/chunks/node_modules_jszip_lib_de8925ba._.js",
+  "static/chunks/node_modules_pako_2138412d._.js",
+  "static/chunks/node_modules_micromark-core-commonmark_dev_lib_fc41dd51._.js",
+  "static/chunks/node_modules_@headlessui_react_dist_73cf7992._.js",
+  "static/chunks/node_modules_@floating-ui_react_dist_22386cb2._.js",
+  "static/chunks/node_modules_html2canvas_dist_html2canvas_6fe6250c.js",
+  "static/chunks/node_modules_ethers_lib_esm_abi_a68e94b7._.js",
+  "static/chunks/node_modules_ethers_lib_esm_providers_53c9dbf9._.js",
+  "static/chunks/node_modules_ethers_lib_esm_650fea78._.js",
+  "static/chunks/node_modules_@noble_curves_esm_0dc5ab55._.js",
+  "static/chunks/node_modules_a9caf03f._.js",
+  "static/chunks/node_modules_parse5_dist_1135fc39._.js",
+  "static/chunks/node_modules_@floating-ui_1b6e7b6d._.js",
+  "static/chunks/node_modules_bca313f2._.js",
+  "static/chunks/node_modules_prismjs_8ce46cf0._.css"
+],
+    source: "dynamic"
+});
