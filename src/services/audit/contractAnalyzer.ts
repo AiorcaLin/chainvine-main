@@ -40,6 +40,8 @@ export async function analyzeContract(params: {
   chain?: string;
   signal?: AbortSignal;
   isMultiFile?: boolean;
+  /** 流式回调：每收到一个 AI 增量 chunk 时触发 */
+  onChunk?: (chunk: string) => void;
 }): Promise<AnalysisResult> {
   const maxRetries = 3;
   let retryCount = 0;
@@ -132,8 +134,8 @@ export async function analyzeContract(params: {
         finalPrompt = await createPromptWithSupperPrompt(finalPrompt);
       }
 
-      // Get AI response
-      const aiResponse = await analyzeWithAI(finalPrompt, params.signal);
+      // Get AI response (with optional streaming)
+      const aiResponse = await analyzeWithAI(finalPrompt, params.signal, params.onChunk);
       if (!aiResponse) {
         throw new Error("Failed to get AI analysis response");
       }

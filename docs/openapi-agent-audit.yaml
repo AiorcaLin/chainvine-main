@@ -1,0 +1,104 @@
+openapi: 3.0.3
+info:
+  title: ChainVine Agent Audit API
+  version: 0.1.0
+  description: >
+    同步 / 流式 Agent API，用于智能合约安全审计（Slither + LLM 双引擎融合）。
+    所有 LLM API Key 从服务器环境变量读取，不从请求传入。
+servers:
+  - url: http://localhost:3000
+    description: 本地开发
+
+paths:
+  /api/agent/audit:
+    post:
+      summary: 双引擎审计（Slither + LLM 融合）
+      description: >
+        同步模式返回完整 JSON；流式模式（stream=true）返回 SSE text/event-stream。
+      parameters:
+        - in: header
+          name: x-agent-api-key
+          required: true
+          schema:
+            type: string
+          description: 共享密钥，须与服务器 AGENT_API_KEY 环境变量匹配。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [address, chain, provider, model]
+              properties:
+                address:
+                  type: string
+                  description: 合约地址 (0x...)
+                  example: "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+                chain:
+                  type: string
+                  description: 链名（ethereum / arbitrum / base / bsc / optimism / polygon / avalanche / aurora）
+                  example: "ethereum"
+                provider:
+                  type: string
+                  enum: [openai, dashscope, neversight]
+                  description: LLM Provider
+                model:
+                  type: string
+                  description: Provider 原生模型 id
+                  example: "gpt-4o-mini"
+                language:
+                  type: string
+                  default: chinese-simplified
+                  description: 报告语言
+                superPrompt:
+                  type: boolean
+                  default: true
+                  description: 是否启用增强型安全提示词
+                stream:
+                  type: boolean
+                  default: false
+                  description: 设为 true 启用 SSE 流式输出
+      responses:
+        "200":
+          description: 审计完成（同步模式返回 JSON，流式模式返回 SSE）
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  input:
+                    type: object
+                  ai:
+                    type: object
+                  engines:
+                    type: array
+                    items:
+                      type: string
+                  timings:
+                    type: object
+                  fusion:
+                    type: object
+                    description: 结构化 findings（severity / source / confidence）
+                  report:
+                    type: object
+                    properties:
+                      mergedMarkdown:
+                        type: string
+                      aiMarkdown:
+                        type: string
+                      slither:
+                        type: object
+            text/event-stream:
+              schema:
+                type: string
+                description: SSE 事件流（chunk / slither / fusion / done / error）
+        "400":
+          description: 请求参数缺失或格式错误
+        "401":
+          description: x-agent-api-key 不匹配或缺失
+        "500":
+          description: 服务器内部错误
+        "502":
+          description: 获取合约源码失败

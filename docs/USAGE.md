@@ -195,4 +195,85 @@ A: 系统会自动获取 implementation 合约源码。如果 implementation 地
 
 ---
 
-*文档版本: v1.0 | 更新日期: 2026-02-09*
+## Agent API（给 AI Agent / 脚本调用）
+
+> 适用场景：外部 AI Agent 或自动化脚本不操作 UI，直接通过 HTTP 调用完成 **Slither + LLM 双引擎融合审计**，获取 **结构化 JSON** 或 **SSE 流式输出**。
+>
+> 设计依据：Yao et al., "ReAct: Synergizing Reasoning and Acting in Language Models", ICLR 2023 —— Agent 通过工具调用（而非 UI 自动化）获取能力扩展。
+
+### 前置条件
+
+在 `.env.local` 中配置以下环境变量：
+
+| 变量 | 说明 |
+|------|------|
+| `AGENT_API_KEY` | 调用方须在 Header `x-agent-api-key` 中携带此值 |
+| `OPENAI_API_KEY` | OpenAI 直连（provider=openai 时需要） |
+| `DASHSCOPE_API_KEY` | 通义千问 DashScope（provider=dashscope 时需要） |
+| `NEVERSIGHT_API_KEY` | Neversight 网关（provider=neversight 时需要） |
+
+**API Key 不从请求 body 传入**，全部从服务器环境变量读取。
+
+### 同步调用（默认）
+
+```bash
+curl -X POST "http://localhost:3000/api/agent/audit" \
+  -H "Content-Type: application/json" \
+  -H "x-agent-api-key: YOUR_AGENT_API_KEY" \
+  -d '{
+    "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    "chain": "ethereum",
+    "provider": "openai",
+    "model": "gpt-4o-mini",
+    "language": "chinese-simplified",
+    "superPrompt": true
+  }'
+```
+
+返回 JSON 包含：
+- `fusion`：结构化 findings（severity / source / confidence / location / recommendation）
+- `report.mergedMarkdown`：融合后的可读审计报告（Markdown）
+- `report.slither`：Slither 原始输出
+- `timings`：各引擎耗时
+
+### 流式调用（StreamAI）
+
+在请求体中加 `"stream": true`，返回 `text/event-stream`（SSE）：
+
+```bash
+curl -N -X POST "http://localhost:3000/api/agent/audit" \
+  -H "Content-Type: application/json" \
+  -H "x-agent-api-key: YOUR_AGENT_API_KEY" \
+  -d '{
+    "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    "chain": "ethereum",
+    "provider": "openai",
+    "model": "gpt-4o-mini",
+    "stream": true
+  }'
+```
+
+SSE 事件类型：
+| event | data | 说明 |
+|-------|------|------|
+| `chunk` | 文本片段 | AI 审计报告的增量输出 |
+| `slither` | JSON | Slither 分析完成通知（findings 数量等） |
+| `fusion` | JSON | 双引擎融合结果（findings + summary） |
+| `done` | JSON | 最终元数据（mergedReport + timings） |
+| `error` | 错误信息 | 分析过程中发生的错误 |
+
+### 支持的 Provider 与模型
+
+| provider | 示例 model | 说明 |
+|----------|-----------|------|
+| `openai` | `gpt-4o-mini`, `gpt-4o` | OpenAI 直连 |
+| `dashscope` | `qwen-max`, `qwen-plus` | 通义千问 DashScope |
+| `neversight` | `openai/gpt-5.2`, `anthropic/claude-4.5-opus` | Neversight 网关 |
+
+### OpenAPI 文档
+
+接口的机器可读描述见 `docs/openapi-agent-audit.yaml`，可用于自动生成客户端代码。
+
+---
+
+*文档版本: v1.1 | 更新日期: 2026-02-14*

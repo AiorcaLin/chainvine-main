@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ethers } from "ethers";
 import { toast } from "react-hot-toast";
 import { checkContractOnChains } from "@/utils/blockchain";
@@ -121,6 +121,30 @@ contract Vault {
   const [dualEngineProgress, setDualEngineProgress] = useState<DualEngineProgress | null>(null);
   const [lastDualResult, setLastDualResult] = useState<DualEngineResult | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [streamingText, setStreamingText] = useState("");
+  const streamingRef = useRef("");
+  const streamingEndRef = useRef<HTMLDivElement>(null);
+
+  // 流式文本：将 ref 同步到 state（节流，每 150ms 更新一次 UI）
+  useEffect(() => {
+    if (!isAnalyzing) {
+      streamingRef.current = "";
+      setStreamingText("");
+      return;
+    }
+    const interval = setInterval(() => {
+      if (streamingRef.current !== streamingText) {
+        setStreamingText(streamingRef.current);
+      }
+    }, 150);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAnalyzing]);
+
+  // 流式文本自动滚动
+  useEffect(() => {
+    streamingEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [streamingText]);
 
   // 分析过程中每秒更新已用时间
   useEffect(() => {
@@ -194,12 +218,20 @@ contract Vault {
       languageCfg = languageCfg === "english" ? "" : `-${languageCfg}`;
       const withSuperPrompt = currentConfig.superPrompt ? "-SuperPrompt" : "";
 
-      // --- Dual Engine: Slither + AI in parallel ---
+      // --- Dual Engine: Slither + AI in parallel (with StreamAI) ---
+      const handleProgress = (progress: DualEngineProgress) => {
+        if (progress.stage === "ai-chunk" && progress.aiChunk) {
+          streamingRef.current += progress.aiChunk;
+          return;
+        }
+        setDualEngineProgress(progress);
+      };
+
       const dualResult = await analyzeDualEngine(
         [contractFile],
         currentConfig,
         "Contract",
-        (progress) => setDualEngineProgress(progress),
+        handleProgress,
         controller.signal,
       );
 
@@ -438,12 +470,20 @@ contract Vault {
         "MultiContract";
       const currentConfig = getAIConfig(config);
 
-      // --- Dual Engine: Slither + AI in parallel ---
+      // --- Dual Engine: Slither + AI in parallel (with StreamAI) ---
+      const handleMultiProgress = (progress: DualEngineProgress) => {
+        if (progress.stage === "ai-chunk" && progress.aiChunk) {
+          streamingRef.current += progress.aiChunk;
+          return;
+        }
+        setDualEngineProgress(progress);
+      };
+
       const dualResult = await analyzeDualEngine(
         uploadedFiles,
         currentConfig,
         contractName,
-        (progress) => setDualEngineProgress(progress),
+        handleMultiProgress,
         controller.signal,
       );
 
@@ -930,103 +970,61 @@ contract Vault {
               />
 
               {isAnalyzing && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-                  <div className="bg-card rounded-lg p-8 flex flex-col items-center min-w-[400px]">
-                    <div className="relative w-24 h-24 mb-4">
-                      <div
-                        className="absolute inset-0 border-4 border-t-accent border-r-accent/50 border-b-accent/30 border-l-accent/10 
-                                    rounded-full animate-spin"
-                      />
-                      <div className="absolute inset-2 bg-card rounded-full flex items-center justify-center">
-                        <ChainVineLogo size={40} className="text-accent animate-bounce-slow" />
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                  <div className={`bg-card rounded-lg p-6 flex flex-col items-center ${streamingText ? "w-[720px] max-h-[85vh]" : "min-w-[400px]"}`}>
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="relative w-16 h-16 flex-shrink-0">
+                        <div className="absolute inset-0 border-4 border-t-accent border-r-accent/50 border-b-accent/30 border-l-accent/10 rounded-full animate-spin" />
+                        <div className="absolute inset-2 bg-card rounded-full flex items-center justify-center">
+                          <ChainVineLogo size={28} className="text-accent animate-bounce-slow" />
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-foreground text-lg font-medium">Dual-Engine Analysis</p>
+                        <p className="text-accent text-sm font-mono">
+                          {Math.floor(elapsedSeconds / 60).toString().padStart(2, "0")}:{(elapsedSeconds % 60).toString().padStart(2, "0")}
+                          {elapsedSeconds > 10 && elapsedSeconds < 120 && <span className="text-muted/70 ml-2 text-xs">typically 1-3 min</span>}
+                          {elapsedSeconds >= 120 && <span className="text-yellow-500 ml-2 text-xs">Large contract...</span>}
+                        </p>
                       </div>
                     </div>
-                    <p className="text-foreground text-lg mb-2">
-                      Dual-Engine Analysis
-                    </p>
-
-                    {/* 已用时间 */}
-                    <p className="text-accent text-sm font-mono mb-3">
-                      {Math.floor(elapsedSeconds / 60).toString().padStart(2, "0")}:{(elapsedSeconds % 60).toString().padStart(2, "0")}
-                      {elapsedSeconds > 10 && elapsedSeconds < 120 && (
-                        <span className="text-muted/70 ml-2">AI analysis typically takes 1-3 min</span>
-                      )}
-                      {elapsedSeconds >= 120 && (
-                        <span className="text-yellow-500 ml-2">Large contract, please wait...</span>
-                      )}
-                    </p>
-
-                    {/* 双引擎进度指示器 */}
                     {dualEngineProgress && (
-                      <div className="w-full mb-4">
-                        {/* 进度条 */}
-                        <div className="w-full bg-border rounded-full h-2 mb-3">
-                          <div
-                            className="bg-accent h-2 rounded-full transition-all duration-500"
-                            style={{ width: `${dualEngineProgress.percent || 0}%` }}
-                          />
+                      <div className="w-full mb-3">
+                        <div className="w-full bg-border rounded-full h-1.5 mb-2">
+                          <div className="bg-accent h-1.5 rounded-full transition-all duration-500" style={{ width: `${dualEngineProgress.percent || 0}%` }} />
                         </div>
-
-                        {/* 引擎状态 — 三阶段指示器 */}
                         <div className="flex justify-between text-xs mb-2">
                           <div className="flex items-center gap-1.5">
-                            <div className={`w-2 h-2 rounded-full ${
-                              dualEngineProgress.slitherDone ? "bg-green-400" : "bg-accent animate-pulse"
-                            }`} />
-                            <span className={dualEngineProgress.slitherDone ? "text-green-400" : "text-muted"}>
-                              Slither {dualEngineProgress.slitherDone ? "✓" : "analyzing..."}
-                            </span>
+                            <div className={`w-2 h-2 rounded-full ${dualEngineProgress.slitherDone ? "bg-green-400" : "bg-accent animate-pulse"}`} />
+                            <span className={dualEngineProgress.slitherDone ? "text-green-400" : "text-muted"}>Slither {dualEngineProgress.slitherDone ? "✓" : "..."}</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <div className={`w-2 h-2 rounded-full ${
-                              dualEngineProgress.aiDone ? "bg-green-400" 
-                                : dualEngineProgress.stage === "ai" ? "bg-accent animate-pulse" 
-                                : "bg-muted/30"
-                            }`} />
-                            <span className={dualEngineProgress.aiDone ? "text-green-400" : "text-muted"}>
-                              AI {dualEngineProgress.aiDone ? "✓" : dualEngineProgress.stage === "ai" ? "analyzing..." : "waiting"}
-                            </span>
+                            <div className={`w-2 h-2 rounded-full ${dualEngineProgress.aiDone ? "bg-green-400" : streamingText ? "bg-accent animate-pulse" : dualEngineProgress.stage === "ai" ? "bg-accent animate-pulse" : "bg-muted/30"}`} />
+                            <span className={dualEngineProgress.aiDone ? "text-green-400" : "text-muted"}>AI {dualEngineProgress.aiDone ? "✓" : streamingText ? "streaming..." : dualEngineProgress.stage === "ai" ? "..." : "waiting"}</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <div className={`w-2 h-2 rounded-full ${
-                              dualEngineProgress.stage === "done" ? "bg-green-400" 
-                                : dualEngineProgress.stage === "merging" ? "bg-accent animate-pulse" 
-                                : "bg-muted/30"
-                            }`} />
-                            <span className={dualEngineProgress.stage === "done" ? "text-green-400" : "text-muted"}>
-                              Fusion {dualEngineProgress.stage === "done" ? "✓" : dualEngineProgress.stage === "merging" ? "merging..." : "waiting"}
-                            </span>
+                            <div className={`w-2 h-2 rounded-full ${dualEngineProgress.stage === "done" ? "bg-green-400" : dualEngineProgress.stage === "merging" ? "bg-accent animate-pulse" : "bg-muted/30"}`} />
+                            <span className={dualEngineProgress.stage === "done" ? "text-green-400" : "text-muted"}>Fusion {dualEngineProgress.stage === "done" ? "✓" : dualEngineProgress.stage === "merging" ? "..." : "waiting"}</span>
                           </div>
                         </div>
-
-                        <p className="text-muted text-sm text-center">
-                          {dualEngineProgress.message}
-                        </p>
-
-                        {/* 错误状态特殊提示 */}
-                        {dualEngineProgress.stage === "error" && (
-                          <p className="text-red-400 text-sm text-center mt-2 font-medium">
-                            {dualEngineProgress.message}
-                          </p>
-                        )}
+                        {dualEngineProgress.message && dualEngineProgress.stage !== "ai-chunk" && <p className="text-muted text-xs text-center">{dualEngineProgress.message}</p>}
+                        {dualEngineProgress.stage === "error" && <p className="text-red-400 text-sm text-center mt-1 font-medium">{dualEngineProgress.message}</p>}
                       </div>
                     )}
-
-                    {!dualEngineProgress && (
-                      <p className="text-muted text-sm mb-4">
-                        Initializing engines...
-                      </p>
+                    {!dualEngineProgress && <p className="text-muted text-sm mb-3">Initializing engines...</p>}
+                    {streamingText && (
+                      <div className="w-full flex-1 min-h-0 mb-3">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs text-accent font-medium">AI Output (streaming)</span>
+                          <span className="text-xs text-muted font-mono">{streamingText.length.toLocaleString()} chars</span>
+                        </div>
+                        <div className="w-full max-h-[45vh] overflow-y-auto bg-background border border-border rounded-lg p-3 text-xs text-foreground/80 font-mono leading-relaxed whitespace-pre-wrap">
+                          {streamingText}
+                          <div ref={streamingEndRef} />
+                        </div>
+                      </div>
                     )}
-
-                    <button
-                      onClick={handleCancelAnalysis}
-                      className="px-4 py-2 bg-secondary text-accent rounded-md 
-                               border border-accent/20
-                               hover:bg-accent/10 transition-colors
-                               font-medium"
-                    >
-                      Cancel Analysis
-                    </button>
+                    <button onClick={handleCancelAnalysis} className="px-4 py-2 bg-secondary text-accent rounded-md border border-accent/20 hover:bg-accent/10 transition-colors font-medium text-sm">Cancel Analysis</button>
                   </div>
                 </div>
               )}
@@ -1221,103 +1219,61 @@ contract Vault {
               />
 
               {isAnalyzing && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-                  <div className="bg-card rounded-lg p-8 flex flex-col items-center min-w-[400px]">
-                    <div className="relative w-24 h-24 mb-4">
-                      <div
-                        className="absolute inset-0 border-4 border-t-accent border-r-accent/50 border-b-accent/30 border-l-accent/10 
-                                    rounded-full animate-spin"
-                      />
-                      <div className="absolute inset-2 bg-card rounded-full flex items-center justify-center">
-                        <ChainVineLogo size={40} className="text-accent animate-bounce-slow" />
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                  <div className={`bg-card rounded-lg p-6 flex flex-col items-center ${streamingText ? "w-[720px] max-h-[85vh]" : "min-w-[400px]"}`}>
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="relative w-16 h-16 flex-shrink-0">
+                        <div className="absolute inset-0 border-4 border-t-accent border-r-accent/50 border-b-accent/30 border-l-accent/10 rounded-full animate-spin" />
+                        <div className="absolute inset-2 bg-card rounded-full flex items-center justify-center">
+                          <ChainVineLogo size={28} className="text-accent animate-bounce-slow" />
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-foreground text-lg font-medium">Dual-Engine Analysis</p>
+                        <p className="text-accent text-sm font-mono">
+                          {Math.floor(elapsedSeconds / 60).toString().padStart(2, "0")}:{(elapsedSeconds % 60).toString().padStart(2, "0")}
+                          {elapsedSeconds > 10 && elapsedSeconds < 120 && <span className="text-muted/70 ml-2 text-xs">typically 1-3 min</span>}
+                          {elapsedSeconds >= 120 && <span className="text-yellow-500 ml-2 text-xs">Large contract...</span>}
+                        </p>
                       </div>
                     </div>
-                    <p className="text-foreground text-lg mb-2">
-                      Dual-Engine Analysis
-                    </p>
-
-                    {/* 已用时间 */}
-                    <p className="text-accent text-sm font-mono mb-3">
-                      {Math.floor(elapsedSeconds / 60).toString().padStart(2, "0")}:{(elapsedSeconds % 60).toString().padStart(2, "0")}
-                      {elapsedSeconds > 10 && elapsedSeconds < 120 && (
-                        <span className="text-muted/70 ml-2">AI analysis typically takes 1-3 min</span>
-                      )}
-                      {elapsedSeconds >= 120 && (
-                        <span className="text-yellow-500 ml-2">Large contract, please wait...</span>
-                      )}
-                    </p>
-
-                    {/* 双引擎进度指示器 */}
                     {dualEngineProgress && (
-                      <div className="w-full mb-4">
-                        {/* 进度条 */}
-                        <div className="w-full bg-border rounded-full h-2 mb-3">
-                          <div
-                            className="bg-accent h-2 rounded-full transition-all duration-500"
-                            style={{ width: `${dualEngineProgress.percent || 0}%` }}
-                          />
+                      <div className="w-full mb-3">
+                        <div className="w-full bg-border rounded-full h-1.5 mb-2">
+                          <div className="bg-accent h-1.5 rounded-full transition-all duration-500" style={{ width: `${dualEngineProgress.percent || 0}%` }} />
                         </div>
-
-                        {/* 引擎状态 — 三阶段指示器 */}
                         <div className="flex justify-between text-xs mb-2">
                           <div className="flex items-center gap-1.5">
-                            <div className={`w-2 h-2 rounded-full ${
-                              dualEngineProgress.slitherDone ? "bg-green-400" : "bg-accent animate-pulse"
-                            }`} />
-                            <span className={dualEngineProgress.slitherDone ? "text-green-400" : "text-muted"}>
-                              Slither {dualEngineProgress.slitherDone ? "✓" : "analyzing..."}
-                            </span>
+                            <div className={`w-2 h-2 rounded-full ${dualEngineProgress.slitherDone ? "bg-green-400" : "bg-accent animate-pulse"}`} />
+                            <span className={dualEngineProgress.slitherDone ? "text-green-400" : "text-muted"}>Slither {dualEngineProgress.slitherDone ? "✓" : "..."}</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <div className={`w-2 h-2 rounded-full ${
-                              dualEngineProgress.aiDone ? "bg-green-400" 
-                                : dualEngineProgress.stage === "ai" ? "bg-accent animate-pulse" 
-                                : "bg-muted/30"
-                            }`} />
-                            <span className={dualEngineProgress.aiDone ? "text-green-400" : "text-muted"}>
-                              AI {dualEngineProgress.aiDone ? "✓" : dualEngineProgress.stage === "ai" ? "analyzing..." : "waiting"}
-                            </span>
+                            <div className={`w-2 h-2 rounded-full ${dualEngineProgress.aiDone ? "bg-green-400" : streamingText ? "bg-accent animate-pulse" : dualEngineProgress.stage === "ai" ? "bg-accent animate-pulse" : "bg-muted/30"}`} />
+                            <span className={dualEngineProgress.aiDone ? "text-green-400" : "text-muted"}>AI {dualEngineProgress.aiDone ? "✓" : streamingText ? "streaming..." : dualEngineProgress.stage === "ai" ? "..." : "waiting"}</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <div className={`w-2 h-2 rounded-full ${
-                              dualEngineProgress.stage === "done" ? "bg-green-400" 
-                                : dualEngineProgress.stage === "merging" ? "bg-accent animate-pulse" 
-                                : "bg-muted/30"
-                            }`} />
-                            <span className={dualEngineProgress.stage === "done" ? "text-green-400" : "text-muted"}>
-                              Fusion {dualEngineProgress.stage === "done" ? "✓" : dualEngineProgress.stage === "merging" ? "merging..." : "waiting"}
-                            </span>
+                            <div className={`w-2 h-2 rounded-full ${dualEngineProgress.stage === "done" ? "bg-green-400" : dualEngineProgress.stage === "merging" ? "bg-accent animate-pulse" : "bg-muted/30"}`} />
+                            <span className={dualEngineProgress.stage === "done" ? "text-green-400" : "text-muted"}>Fusion {dualEngineProgress.stage === "done" ? "✓" : dualEngineProgress.stage === "merging" ? "..." : "waiting"}</span>
                           </div>
                         </div>
-
-                        <p className="text-muted text-sm text-center">
-                          {dualEngineProgress.message}
-                        </p>
-
-                        {/* 错误状态特殊提示 */}
-                        {dualEngineProgress.stage === "error" && (
-                          <p className="text-red-400 text-sm text-center mt-2 font-medium">
-                            {dualEngineProgress.message}
-                          </p>
-                        )}
+                        {dualEngineProgress.message && dualEngineProgress.stage !== "ai-chunk" && <p className="text-muted text-xs text-center">{dualEngineProgress.message}</p>}
+                        {dualEngineProgress.stage === "error" && <p className="text-red-400 text-sm text-center mt-1 font-medium">{dualEngineProgress.message}</p>}
                       </div>
                     )}
-
-                    {!dualEngineProgress && (
-                      <p className="text-muted text-sm mb-4">
-                        Initializing engines...
-                      </p>
+                    {!dualEngineProgress && <p className="text-muted text-sm mb-3">Initializing engines...</p>}
+                    {streamingText && (
+                      <div className="w-full flex-1 min-h-0 mb-3">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs text-accent font-medium">AI Output (streaming)</span>
+                          <span className="text-xs text-muted font-mono">{streamingText.length.toLocaleString()} chars</span>
+                        </div>
+                        <div className="w-full max-h-[45vh] overflow-y-auto bg-background border border-border rounded-lg p-3 text-xs text-foreground/80 font-mono leading-relaxed whitespace-pre-wrap">
+                          {streamingText}
+                          <div ref={streamingEndRef} />
+                        </div>
+                      </div>
                     )}
-
-                    <button
-                      onClick={handleCancelAnalysis}
-                      className="px-4 py-2 bg-secondary text-accent rounded-md 
-                               border border-accent/20
-                               hover:bg-accent/10 transition-colors
-                               font-medium"
-                    >
-                      Cancel Analysis
-                    </button>
+                    <button onClick={handleCancelAnalysis} className="px-4 py-2 bg-secondary text-accent rounded-md border border-accent/20 hover:bg-accent/10 transition-colors font-medium text-sm">Cancel Analysis</button>
                   </div>
                 </div>
               )}

@@ -16,11 +16,13 @@ import { analyzeContract } from "./contractAnalyzer";
 import { fuseResults, formatFusionReport, FusionResult } from "./findingFusion";
 
 export interface DualEngineProgress {
-  stage: "slither" | "ai" | "merging" | "done" | "error";
+  stage: "slither" | "ai" | "ai-chunk" | "merging" | "done" | "error";
   message: string;
   slitherDone?: boolean;
   aiDone?: boolean;
   percent?: number;
+  /** AI 流式文本增量 chunk（仅 stage === "ai-chunk" 时有值） */
+  aiChunk?: string;
 }
 
 export interface DualEngineResult {
@@ -84,7 +86,22 @@ export async function analyzeDualEngine(
   const aiPromise = (async () => {
     const aiStart = Date.now();
     try {
-      const result = await analyzeContract({ files, contractName, signal });
+      const result = await analyzeContract({
+        files,
+        contractName,
+        signal,
+        onChunk: onProgress
+          ? (chunk: string) => {
+              onProgress({
+                stage: "ai-chunk",
+                message: "",
+                slitherDone: slitherAvailable ? !!slitherResult : true,
+                aiDone: false,
+                aiChunk: chunk,
+              });
+            }
+          : undefined,
+      });
       aiDurationMs = Date.now() - aiStart;
       if (result && result.report && result.report.analysis) {
         aiReport = result.report.analysis;
