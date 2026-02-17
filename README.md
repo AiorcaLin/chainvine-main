@@ -15,7 +15,7 @@
 
 ---
 
-![image](https://github.com/user-attachments/assets/336fae3c-06af-4e09-a59a-3d815e1f0f53)
+![image-20260217083306234](README.assets/image-20260217083306234.png)
 
 ---
 
