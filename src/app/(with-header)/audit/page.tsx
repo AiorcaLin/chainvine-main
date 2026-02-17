@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useTheme } from "next-themes";
 import { ethers } from "ethers";
 import { toast } from "react-hot-toast";
 import { checkContractOnChains } from "@/utils/blockchain";
@@ -45,6 +46,11 @@ export default function AuditPage() {
   const [analysisFiles, setAnalysisFiles] = useState<ContractFile[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { config } = useAIConfig();
+  const { resolvedTheme } = useTheme();
+  const monacoTheme = useMemo(
+    () => (resolvedTheme === "dark" ? "vs-dark" : "vs"),
+    [resolvedTheme]
+  );
   const [editorContent, setEditorContent] =
     useState(`// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
@@ -606,24 +612,37 @@ contract Vault {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="absolute top-20 right-4 text-muted text-sm">
-        The ticker is ETH
-      </div>
-
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="mb-16 text-center">
-          <h1 className="text-5xl font-bold text-foreground mb-4">
-            Smart Contract <span className="text-accent">Security</span>
-          </h1>
-          <p className="text-muted text-lg">
-            Powered by AI, securing your blockchain future with real-time
-            analysis
-          </p>
+      {/* ── Hero Section — 与首页视觉风格一致 ── */}
+      <section className="relative overflow-hidden">
+        {/* 背景渐变圆圈装饰 */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-accent/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-accent/3 rounded-full blur-3xl" />
         </div>
 
+        <div className="relative container mx-auto px-4 pt-10 pb-6 text-center max-w-4xl">
+          {/* Logo + 品牌标题 */}
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <ChainVineLogo size={40} className="text-accent" />
+            <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight">
+              Chain<span className="text-accent">Vine</span> Audit
+            </h1>
+          </div>
+
+          {/* 中英双语描述 */}
+          <p className="text-lg md:text-xl text-foreground/80 font-medium mb-2 max-w-2xl mx-auto">
+            Dual-Engine Smart Contract Vulnerability Scanner
+          </p>
+          <p className="text-sm text-muted max-w-xl mx-auto mb-8">
+            Slither 静态分析 + AI 大模型深度审计，双引擎交叉验证，精准定位智能合约安全漏洞
+          </p>
+        </div>
+      </section>
+
+      <main className="container mx-auto px-4 pb-8 max-w-4xl">
         <div className="max-w-2xl mx-auto mb-12">
           <p className="text-muted text-center mb-6">
-            Choose your preferred method to analyze smart contracts
+            选择合约分析方式 / Choose your analysis method
           </p>
 
           <div className="bg-gradient-to-r from-card via-secondary to-card p-1 rounded-xl">
@@ -787,7 +806,7 @@ contract Vault {
               <Editor
                 height="400px"
                 defaultLanguage="sol"
-                theme="vs-dark"
+                theme={monacoTheme}
                 value={editorContent}
                 onChange={(value) => {
                   const newContent = value || "";

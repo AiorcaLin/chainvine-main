@@ -129,7 +129,7 @@ export default function HomePage() {
             </Link>
 
             <a
-              href="https://github.com/AiorcaLin/ChainVine"
+              href="https://github.com/AiorcaLin/chainvine-main"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-8 py-4 rounded-xl text-lg font-medium
@@ -240,7 +240,7 @@ export default function HomePage() {
             <span>
               © 2026 ChainVine · Licensed under{" "}
               <a
-                href="https://github.com/AiorcaLin/ChainVine/blob/main/LICENSE"
+                href="https://github.com/AiorcaLin/chainvine-main/blob/main/LICENSE"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-accent hover:text-accent-hover transition-colors"
@@ -249,7 +249,7 @@ export default function HomePage() {
               </a>
             </span>
             <a
-              href="https://github.com/AiorcaLin/ChainVine"
+              href="https://github.com/AiorcaLin/chainvine-main"
               target="_blank"
               rel="noopener noreferrer"
               className="p-1 text-muted hover:text-foreground transition-colors"

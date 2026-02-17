@@ -104,57 +104,48 @@ Numbered list of the top 5-10 actionable recommendations, ordered by severity.
 ## Improved Code with Security Comments
 Provide the improved contract code with inline security comments explaining each fix. Include full function bodies — do not truncate.`;
 
-/**
- * Super Prompt — appended when user enables "Super Prompt" mode.
- *
- * Design: Uses Chain-of-Thought (CoT) + historical exploit anchoring to deepen analysis.
- * Ref: Wei et al., "Chain-of-Thought Prompting", NeurIPS 2022
- * Ref: Zhou et al., "Large Language Models Are Human-Level Prompt Engineers", ICLR 2023
- *
- * NOTE: The export name `SUPPER_PROMPT` is kept for backward compatibility
- * (referenced in contractAnalyzer.ts, contractAnalyzerServer.ts, etc.)
- */
 export const SUPPER_PROMPT = `
-<enhanced_analysis_mode>
-You are now in **Enhanced Deep Audit** mode. Apply the following additional protocols:
+<prompt_metadata>
+Type: Smart Contract Security Analysis
+Purpose: Deep Security Vulnerability Detection
+Paradigm: Multi-dimensional Security Assessment
+Constraints: Security Best Practices
+Objective: Comprehensive security audit
+</prompt_metadata>
 
-## Historical Exploit Anchoring
-For each finding, cross-reference with known exploits from 2016–2025:
-- The DAO hack (2016): recursive reentrancy, $60M loss
-- Parity Wallet freeze (2017): unprotected library self-destruct, $150M locked
-- bZx flash loan attack (2020): oracle manipulation via flash loan
-- Poly Network hack (2021): cross-chain access control bypass, $611M
-- Ronin Bridge hack (2022): compromised validator keys, $625M
-- Euler Finance exploit (2023): incorrect collateral factor logic, $197M
-- Curve pool reentrancy (2023): Vyper compiler bug enabling reentrancy, $70M
+<core>
+{
+  [∅] ⇔ [∞] ⇔ [0,1]
+  Smart Contract Security Patterns
+  ∀contract : verify(security_properties)
+}
+</core>
 
-When you identify a vulnerability, explicitly state: "This pattern is similar to [Exploit Name] because..."
+<think>
+?(security_vulnerabilities) → !(security_solutions)
+</think>
 
-## Multi-perspective Analysis
-For each critical/high finding, analyze from three perspectives:
-1. **Attacker**: How would a malicious actor exploit this? What is the optimal attack sequence?
-2. **MEV Searcher**: Can this be exploited via mempool observation, sandwich attacks, or backrunning?
-3. **Protocol Defender**: What monitoring or circuit breakers could detect/prevent the attack?
+<approach>
+while security_coverage < complete:
+  improve(vulnerability_detection)
+  enhance(analysis_depth)
+  if new_vulnerability_pattern_found():
+    document_and_analyze()
+</approach>
 
-## Edge Case Exploration
-Systematically check these boundary conditions:
-- Zero-value inputs (amount=0, address(0))
-- Maximum values (type(uint256).max)
-- Self-referential calls (msg.sender == address(this))
-- Empty arrays / empty bytes
-- First-and-last user scenarios (first deposit, last withdrawal)
-- Reentrancy through callbacks (ERC-721 onERC721Received, ERC-777 hooks, ERC-1155 hooks)
+<mission>
+Analyze(all_possible_attack_vectors);
+Explore(security_edge_cases);
+Question(implementation_assumptions);
+Seek(vulnerability_patterns);
+Embrace(security_best_practices);
+</mission>
 
-## Economic Attack Modeling
-For DeFi protocols, model:
-- Flash loan amplification: Can an attacker borrow large amounts to manipulate state?
-- Donation attacks: Can direct token transfers (not via deposit) corrupt accounting?
-- Governance attacks: Can voting power be flash-loaned?
-- Liquidation cascades: Can manipulating one position trigger chain liquidations?
-
-## Output Requirements
-- Be exhaustive: report ALL findings, even low-severity ones
-- Be precise: provide exact line numbers and function names
-- Be actionable: every recommendation must include concrete code changes
-</enhanced_analysis_mode>
+<historical_analysis>
+smart_contract_vulnerabilities(2015-2024),
+find; correlation,
+(subject + historical_exploits)
+apply(security_analysis),
+do (pattern_recognition, risk_assessment, mitigation_strategies)
+</historical_analysis>
 `;

@@ -157,26 +157,15 @@ function SourceContent() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-card flex items-center justify-center">
-        <div className="text-center">
+      <div className="fixed inset-0 bg-background flex items-center justify-center">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-accent/5 rounded-full blur-3xl" />
+        </div>
+        <div className="text-center relative">
           <div className="relative w-24 h-24 mx-auto mb-6">
-            {/* Outer rotating halo */}
-            <div
-              className="absolute inset-0 border-4 border-t-accent border-r-accent/50 border-b-accent/30 border-l-accent/10 
-                          rounded-full animate-spin"
-            />
-
-            {/* Inner pulse effect */}
-            <div
-              className="absolute inset-2 border-2 border-accent/50 rounded-full 
-                          animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite]"
-            />
-
-            {/* Logo */}
-            <div
-              className="absolute inset-3 bg-card rounded-full flex items-center justify-center
-                          border border-accent/20"
-            >
+            <div className="absolute inset-0 border-4 border-t-accent border-r-accent/50 border-b-accent/30 border-l-accent/10 rounded-full animate-spin" />
+            <div className="absolute inset-2 border-2 border-accent/50 rounded-full animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite]" />
+            <div className="absolute inset-3 bg-background rounded-full flex items-center justify-center border border-accent/20">
               <ChainVineLogo size={40} className="text-accent animate-bounce-slow" />
             </div>
           </div>
@@ -196,9 +185,10 @@ function SourceContent() {
 
   if (!sourceData) {
     return (
-      <div className="fixed inset-0 bg-card flex items-center justify-center">
-        <div className="text-foreground text-center">
-          <p className="text-lg mb-2">No source code found</p>
+      <div className="fixed inset-0 bg-background flex items-center justify-center">
+        <div className="text-center">
+          <ChainVineLogo size={48} className="text-muted/40 mx-auto mb-4" />
+          <p className="text-lg font-medium text-foreground mb-2">No source code found</p>
           <p className="text-sm text-muted">
             This contract may not exist on {chain} or its source code is not
             verified.
@@ -236,15 +226,12 @@ export default function SourcePage() {
   return (
     <Suspense
       fallback={
-        <div className="fixed inset-0 bg-card flex items-center justify-center">
+        <div className="fixed inset-0 bg-background flex items-center justify-center">
           <div className="text-center">
             <div className="relative w-24 h-24 mx-auto mb-6">
-              {/* Outer rotating halo */}
               <div className="absolute inset-0 border-4 border-t-accent border-r-accent/50 border-b-accent/30 border-l-accent/10 rounded-full animate-spin" />
-              {/* Inner pulse effect */}
               <div className="absolute inset-2 border-2 border-accent/50 rounded-full animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite]" />
-              {/* Logo */}
-              <div className="absolute inset-3 bg-card rounded-full flex items-center justify-center border border-accent/20">
+              <div className="absolute inset-3 bg-background rounded-full flex items-center justify-center border border-accent/20">
                 <ChainVineLogo size={32} className="text-accent animate-bounce-slow" />
               </div>
             </div>
